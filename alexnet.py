@@ -28,8 +28,7 @@ import numpy as np
 class AlexNet(object):
     """Implementation of the AlexNet."""
 
-    def __init__(self, x, keep_prob, num_classes, skip_layer,
-                 weights_path='DEFAULT'):
+    def __init__(self, x, keep_prob, num_classes, skip_layer, weights_path='DEFAULT'):
         """Create the graph of the AlexNet model.
 
         Args:
@@ -122,8 +121,7 @@ class AlexNet(object):
                             session.run(var.assign(data))
 
 
-def conv(x, filter_height, filter_width, num_filters, stride_y, stride_x, name,
-         padding='SAME', groups=1):
+def conv(x, filter_height, filter_width, num_filters, stride_y, stride_x, name, padding='SAME', groups=1):
     """Create a convolution layer.
 
     Adapted from: https://github.com/ethereon/caffe-tensorflow
@@ -132,17 +130,17 @@ def conv(x, filter_height, filter_width, num_filters, stride_y, stride_x, name,
     input_channels = int(x.get_shape()[-1])
 
     # Create lambda function for the convolution
-    convolve = lambda i, k: tf.nn.conv2d(i, k,
+    convolve = lambda i, k: tf.nn.conv2d(input=i,
+                                         filter=k,
                                          strides=[1, stride_y, stride_x, 1],
                                          padding=padding)
 
     with tf.variable_scope(name) as scope:
         # Create tf variables for the weights and biases of the conv layer
-        weights = tf.get_variable('weights', shape=[filter_height,
-                                                    filter_width,
-                                                    input_channels/groups,
-                                                    num_filters])
-        biases = tf.get_variable('biases', shape=[num_filters])
+        weights = tf.get_variable(name='weights',
+                                  shape=[filter_height, filter_width, input_channels/groups, num_filters])
+        biases = tf.get_variable(name='biases',
+                                 shape=[num_filters])
 
     if groups == 1:
         conv = convolve(x, weights)
@@ -172,9 +170,12 @@ def fc(x, num_in, num_out, name, relu=True):
     with tf.variable_scope(name) as scope:
 
         # Create tf variables for the weights and biases
-        weights = tf.get_variable('weights', shape=[num_in, num_out],
+        weights = tf.get_variable(name='weights',
+                                  shape=[num_in, num_out],
                                   trainable=True)
-        biases = tf.get_variable('biases', [num_out], trainable=True)
+        biases = tf.get_variable(name='biases',
+                                 shape=[num_out],
+                                 trainable=True)
 
         # Matrix multiply weights and inputs and add bias
         act = tf.nn.xw_plus_b(x, weights, biases, name=scope.name)
@@ -187,19 +188,22 @@ def fc(x, num_in, num_out, name, relu=True):
         return act
 
 
-def max_pool(x, filter_height, filter_width, stride_y, stride_x, name,
-             padding='SAME'):
+def max_pool(x, filter_height, filter_width, stride_y, stride_x, name, padding='SAME'):
     """Create a max pooling layer."""
-    return tf.nn.max_pool(x, ksize=[1, filter_height, filter_width, 1],
+    return tf.nn.max_pool(value=x,
+                          ksize=[1, filter_height, filter_width, 1],
                           strides=[1, stride_y, stride_x, 1],
                           padding=padding, name=name)
 
 
 def lrn(x, radius, alpha, beta, name, bias=1.0):
     """Create a local response normalization layer."""
-    return tf.nn.local_response_normalization(x, depth_radius=radius,
-                                              alpha=alpha, beta=beta,
-                                              bias=bias, name=name)
+    return tf.nn.local_response_normalization(input=x,
+                                              depth_radius=radius,
+                                              alpha=alpha,
+                                              beta=beta,
+                                              bias=bias,
+                                              name=name)
 
 
 def dropout(x, keep_prob):
