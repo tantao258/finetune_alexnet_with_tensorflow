@@ -1,10 +1,8 @@
 """Script to finetune AlexNet using Tensorflow.
 
 With this script you can finetune AlexNet as provided in the alexnet.py
-class on any given dataset. Specify the configuration settings at the
-beginning according to your problem.
-This script was written for TensorFlow >= version 1.2rc0 and comes with a blog
-post, which you can find here:
+class on any given dataset. Specify the configuration settings at the beginning according to your problem.
+This script was written for TensorFlow >= version 1.2rc0 and comes with a blog post, which you can find here:
 
 https://kratzert.github.io/2017/02/24/finetuning-alexnet-with-tensorflow.html
 
@@ -13,10 +11,8 @@ contact: f.kratzert(at)gmail.com
 """
 
 import os
-
 import numpy as np
 import tensorflow as tf
-
 from alexnet import AlexNet
 from datagenerator import ImageDataGenerator
 from datetime import datetime
@@ -44,8 +40,8 @@ train_layers = ['fc8', 'fc7', 'fc6']
 display_step = 20
 
 # Path for tf.summary.FileWriter and to store model checkpoints
-filewriter_path = "/tmp/finetune_alexnet/tensorboard"
-checkpoint_path = "/tmp/finetune_alexnet/checkpoints"
+filewriter_path = "/runs/tensorboard"
+checkpoint_path = "/runs/checkpoints"
 
 """
 Main Part of the finetuning Script.
@@ -93,8 +89,7 @@ var_list = [v for v in tf.trainable_variables() if v.name.split('/')[0] in train
 
 # Op for calculating the loss
 with tf.name_scope("cross_ent"):
-    loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=score,
-                                                                  labels=y))
+    loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=score, labels=y))
 
 # Train op
 with tf.name_scope("train"):
@@ -152,8 +147,7 @@ with tf.Session() as sess:
     model.load_initial_weights(sess)
 
     print("{} Start training...".format(datetime.now()))
-    print("{} Open Tensorboard at --logdir {}".format(datetime.now(),
-                                                      filewriter_path))
+    print("{} Open Tensorboard at --logdir {}".format(datetime.now(), filewriter_path))
 
     # Loop over number of epochs
     for epoch in range(num_epochs):

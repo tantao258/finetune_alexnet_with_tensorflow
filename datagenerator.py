@@ -1,7 +1,3 @@
-# Created on Wed May 31 14:48:46 2017
-#
-# @author: Frederik Kratzert
-
 """Containes a helper class for image input pipelines in tensorflow."""
 
 import tensorflow as tf
@@ -15,13 +11,7 @@ IMAGENET_MEAN = tf.constant([123.68, 116.779, 103.939], dtype=tf.float32)
 
 
 class ImageDataGenerator(object):
-    """Wrapper class around the new Tensorflows dataset pipeline.
-
-    Requires Tensorflow >= version 1.12rc0
-    """
-
-    def __init__(self, txt_file, mode, batch_size, num_classes, shuffle=True,
-                 buffer_size=1000):
+    def __init__(self, txt_file, mode, batch_size, num_classes, shuffle=True, buffer_size=1000):
         """Create a new ImageDataGenerator.
 
         Recieves a path string to a text file, which consists of many lines,
@@ -33,11 +23,11 @@ class ImageDataGenerator(object):
         Args:
             txt_file: Path to the text file.
             mode: Either 'training' or 'validation'. Depending on this value,
-                different parsing functions will be used.
+                  different parsing functions will be used.
             batch_size: Number of images per batch.
             num_classes: Number of classes in the dataset.
-            shuffle: Wether or not to shuffle the data in the dataset and the
-                initial file list.
+            shuffle: Wether or not to shuffle the data
+                in the dataset and the initial file list.
             buffer_size: Number of images used as buffer for TensorFlows
                 shuffling of the dataset.
 
@@ -45,11 +35,12 @@ class ImageDataGenerator(object):
             ValueError: If an invalid mode is passed.
 
         """
+
         self.txt_file = txt_file
         self.num_classes = num_classes
 
         # retrieve the data from the text file
-        self._read_txt_file()
+        self.read_txt_file()
 
         # number of samples in the dataset
         self.data_size = len(self.labels)
@@ -63,19 +54,17 @@ class ImageDataGenerator(object):
         self.labels = convert_to_tensor(self.labels, dtype=dtypes.int32)
 
         # create dataset
-        data = Dataset.from_tensor_slices((self.img_paths, self.labels))
+        data = tf.data.Dataset.from_tensor_slices((self.img_paths, self.labels))
 
         # distinguish between train/infer. when calling the parsing functions
         if mode == 'training':
-            data = data.map(self._parse_function_train, num_threads=8,
-                      output_buffer_size=100*batch_size)
+            data = data.map(self._parse_function_train, num_threads=8, output_buffer_size=100*batch_size)
 
         elif mode == 'inference':
-            data = data.map(self._parse_function_inference, num_threads=8,
-                      output_buffer_size=100*batch_size)
+            data = data.map(self._parse_function_inference, num_threads=8, output_buffer_size=100*batch_size)
 
         else:
-            raise ValueError("Invalid mode '%s'." % (mode))
+            raise ValueError("Invalid mode {}" .format(mode))
 
         # shuffle the first `buffer_size` elements of the dataset
         if shuffle:
@@ -86,7 +75,7 @@ class ImageDataGenerator(object):
 
         self.data = data
 
-    def _read_txt_file(self):
+    def read_txt_file(self):
         """Read the content of the text file and store it into lists."""
         self.img_paths = []
         self.labels = []
