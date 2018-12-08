@@ -1,212 +1,139 @@
-"""This is an TensorFLow implementation of AlexNet by Alex Krizhevsky at all.
+"""Script to finetune AlexNet using Tensorflow.
 
-Paper:
-(http://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks.pdf)
-
-Explanation can be found in my blog post:
+With this script you can finetune AlexNet as provided in the alexnet.py
+class on any given dataset. Specify the configuration settings at the beginning according to your problem.
+This script was written for TensorFlow >= version 1.2rc0 and comes with a blog post, which you can find here:
 https://kratzert.github.io/2017/02/24/finetuning-alexnet-with-tensorflow.html
-
-This script enables finetuning AlexNet on any given Dataset with any number of
-classes. The structure of this script is strongly inspired by the fast.ai
-Deep Learning class by Jeremy Howard and Rachel Thomas, especially their vgg16
-finetuning script:
-Link:
-- https://github.com/fastai/courses/blob/master/deeplearning1/nbs/vgg16.py
-
-
-The pretrained weights can be downloaded here and should be placed in the same folder as this file:
-- http://www.cs.toronto.edu/~guerzhoy/tf_alexnet/
-
-@author: Frederik Kratzert (contact: f.kratzert(at)gmail.com)
+Author: Frederik Kratzert
+contact: f.kratzert(at)gmail.com
 """
 
+import os
+import time
 import tensorflow as tf
-import numpy as np
+from alexnet import AlexNet
+from utils import ImageDataGenerator
+from datetime import datetime
 
+os.environ['CUDA_VISIBLE_DEVICES'] = '0,1,2,3'
 
-class AlexNet(object):
-    """Implementation of the AlexNet."""
-    def __init__(self, keep_prob, num_classes, train_layers, learning_rate=0.01, model="train", weights_path='DEFAULT'):
-        """Create the graph of the AlexNet model.
-        """
-        # Parse input arguments into class variables
-        if weights_path == 'DEFAULT':
-            self.WEIGHTS_PATH = 'bvlc_alexnet.npy'
-        else:
-            self.WEIGHTS_PATH = weights_path
-        self.train_layers = train_layers
+"""
+Configuration Part.
+"""
+# Parameters
+tf.app.flags.DEFINE_string("train_file", '/path/to/train.txt', "the path of train data")
+tf.app.flags.DEFINE_string("val_file", '/path/to/val.txt', "the path of val data")
+tf.app.flags.DEFINE_float("learning_rate", 0.01, "learn_rate(default:0.01)")
+tf.app.flags.DEFINE_integer("num_epochs", 10, "num_epoches(default:10)")
+tf.app.flags.DEFINE_integer("batch_size", 128, "batch_size(default:128)")
+tf.app.flags.DEFINE_integer("num_classes", 2, "num_classes(default:2)")
+tf.app.flags.DEFINE_float("keep_prob", 0.5, "dropout_rate(default:0.5)")
+tf.app.flags.DEFINE_integer("evaluate_every", 200, "Evaluate model on dev set after this many steps (default: 100)")
+tf.app.flags.DEFINE_integer("checkpoint_every", 400, "Save model after this many steps (default: 100)")
+tf.app.flags.DEFINE_integer("num_checkpoints", 3, "num_checkpoints(default:3)")
+FLAGS = tf.app.flags.FLAGS
+train_layers = ['fc6', 'fc7', 'fc8']
 
-        # Call the create function to build the computational graph of AlexNet
-        with tf.variable_scope("input"):
-            self.x_input = tf.placeholder(tf.float32, [None, 227, 227, 3], name="x_input")
-            self.y_input = tf.placeholder(tf.float32, [None, num_classes], name="y_input")
-            self.keep_prob = tf.placeholder(tf.float32, name="keep_prob")
+"""
+Main Part of the finetuning Script.
+"""
 
-        # 1st Layer: Conv (w ReLu) -> Lrn -> Pool
-        conv1 = conv(self.x_input, 11, 11, 96, 4, 4, padding='VALID', name='conv1')
-        norm1 = lrn(conv1, 2, 2e-05, 0.75, name='norm1')
-        pool1 = max_pool(norm1, 3, 3, 2, 2, padding='VALID', name='pool1')
+# Load data on the cpu
+print("Loading data...")
+with tf.device('/cpu:0'):
+    train_iterator = ImageDataGenerator(txt_file=FLAGS.train_file,
+                                        mode='training',
+                                        batch_size=FLAGS.batch_size,
+                                        num_classes=FLAGS.num_classes,
+                                        shuffle=True)
 
-        # 2nd Layer: Conv (w ReLu)  -> Lrn -> Pool with 2 groups
-        conv2 = conv(pool1, 5, 5, 256, 1, 1, groups=2, name='conv2')
-        norm2 = lrn(conv2, 2, 2e-05, 0.75, name='norm2')
-        pool2 = max_pool(norm2, 3, 3, 2, 2, padding='VALID', name='pool2')
+    val_iterator = ImageDataGenerator(txt_file=FLAGS.val_file,
+                                      mode='inference',
+                                      batch_size=FLAGS.batch_size,
+                                      num_classes=FLAGS.num_classes,
+                                      shuffle=False)
 
-        # 3rd Layer: Conv (w ReLu)
-        conv3 = conv(pool2, 3, 3, 384, 1, 1, name='conv3')
+    train_next_batch = train_iterator.iterator.get_next()
+    val_next_batch = val_iterator.iterator.get_next()
 
-        # 4th Layer: Conv (w ReLu) splitted into two groups
-        conv4 = conv(conv3, 3, 3, 384, 1, 1, groups=2, name='conv4')
+# Initialize model
+alexNet = AlexNet(keep_prob=FLAGS.keep_prob,
+                  num_classes=FLAGS.num_classes,
+                  train_layers=train_layers,
+                  learning_rate=FLAGS.learning_rate,
+                  model="train"
+                  )
 
-        # 5th Layer: Conv (w ReLu) -> Pool splitted into two groups
-        conv5 = conv(conv4, 3, 3, 256, 1, 1, groups=2, name='conv5')
-        pool5 = max_pool(conv5, 3, 3, 2, 2, padding='VALID', name='pool5')
+with tf.Session() as sess:
+    timestamp = str(int(time.time()))
+    out_dir = os.path.abspath(os.path.join(os.path.curdir, "runs", timestamp))
+    print("Writing to {}\n".format(out_dir))
 
-        # 6th Layer: Flatten -> FC (w ReLu) -> Dropout
-        flattened = tf.reshape(pool5, [-1, 6 * 6 * 256])
-        fc6 = fc(flattened, 6 * 6 * 256, 4096, name='fc6')
-        dropout6 = dropout(fc6, keep_prob)
+    # define summary
+    grad_summaries = []
+    for g, v in alexNet.grads_and_vars:
+        if g is not None:
+            grad_hist_summary = tf.summary.histogram("{}/grad/hist".format(v.name), g)
+            sparsity_summary = tf.summary.scalar("{}/grad/sparsity".format(v.name), tf.nn.zero_fraction(g))
+            grad_summaries.append(grad_hist_summary)
+            grad_summaries.append(sparsity_summary)
+    grad_summaries_merged = tf.summary.merge(grad_summaries)
+    loss_summary = tf.summary.scalar("loss", alexNet.loss)
+    acc_summary = tf.summary.scalar("accuracy", alexNet.accuracy)
 
-        # 7th Layer: FC (w ReLu) -> Dropout
-        fc7 = fc(dropout6, 4096, 4096, name='fc7')
-        dropout7 = dropout(fc7, keep_prob)
+    # merge all the train summary
+    train_summary_merged = tf.summary.merge([loss_summary, acc_summary, grad_summaries_merged])
+    train_summary_writer = tf.summary.FileWriter(os.path.join(out_dir, "summaries", "train"), graph=sess.graph)
 
-        # 8th Layer: FC and return unscaled activations
-        self.fc8 = fc(dropout7, 4096, num_classes, relu=False, name='fc8')
+    # merge all the dev summary
+    dev_summary_merged = tf.summary.merge([loss_summary, acc_summary])
+    dev_summary_writer = tf.summary.FileWriter(os.path.join(out_dir, "summaries", "dev"), graph=sess.graph)
 
-        if model == "train" or model == "val":
+    # checkPoint saver
+    checkpoint_dir = os.path.abspath(os.path.join(out_dir, "checkpoints"))
+    if not os.path.exists(checkpoint_dir):
+        os.makedirs(checkpoint_dir)
+    checkpoint_prefix = os.path.join(checkpoint_dir, "model")
+    saver = tf.train.Saver(tf.global_variables(), max_to_keep=FLAGS.num_checkpoints)
 
-            with tf.name_scope("loss"):
-                self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=self.fc8, labels=self.y_input))
+    sess.run(tf.global_variables_initializer())
+    # Load the pretrained weights into the non-trainable layer
+    alexNet.load_initial_weights(sess)
+    print("{} Start training...".format(datetime.now()))
 
-            with tf.name_scope("train"):
-                self.global_step = tf.Variable(0, name="global_step", trainable=False)
-                var_list = [v for v in tf.trainable_variables() if v.name.split('/')[0] in train_layers]
-                gradients = tf.gradients(self.loss, var_list)
-                self.grads_and_vars = list(zip(gradients, var_list))
-                optimizer = tf.train.GradientDescentOptimizer(learning_rate)
-                self.train_op = optimizer.apply_gradients(grads_and_vars=self.grads_and_vars, global_step=self.global_step)
+    while True:
+        # train loop
+        x_batch_train, y_batch_train = sess.run(train_next_batch)
+        _, step, train_summaries, loss, accuracy = sess.run([alexNet.train_op, alexNet.global_step, train_summary_merged, AlexNet.loss, alexNet.accuracy],
+                                                            feed_dict={
+                                                                alexNet.x_input: x_batch_train,
+                                                                alexNet.y_input: y_batch_train,
+                                                                alexNet.keep_prob: FLAGS.keep_prob
+                                                            })
+        train_summary_writer.add_summary(train_summaries, step)
+        time_str = datetime.datetime.now().isoformat()
+        print("{}: step: {}, loss: {:g}, acc: {:g}".format(time_str, step, loss, accuracy))
 
-            with tf.name_scope("prediction"):
-                self.prediction = tf.argmax(self.fc8, 1, name="prediction")
+        # validation
+        current_step = tf.train.global_step(sess, alexNet.global_step)
 
-            with tf.name_scope("accuracy"):
-                correct_prediction = tf.equal(self.prediction, tf.argmax(self.y_input, 1))
-                self.accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"), name="accuracy")
+        if current_step % FLAGS.evaluate_every == 0:
+            print("\nEvaluation:")
+            x_batch_val, y_batch_val = sess.run(val_next_batch)
+            step, dev_summaries, loss, accuracy = sess.run([alexNet.global_step, dev_summary_merged, alexNet.loss, alexNet.accuracy],
+                                                           feed_dict={
+                                                               alexNet.x_input: x_batch_val,
+                                                               alexNet.y_input: y_batch_val,
+                                                               alexNet.keep_prob: 1
+                                                           })
+            dev_summary_writer.add_summary(dev_summaries, step)
+            time_str = datetime.datetime.now().isoformat()
+            print("{}: step: {}, loss: {:g}, acc: {:g}".format(time_str, step, loss, accuracy))
 
-    def load_initial_weights(self, session):
-        """Load weights from file into network.
-        As the weights from http://www.cs.toronto.edu/~guerzhoy/tf_alexnet/
-        come as a dict of lists (e.g. weights['conv1'] is a list) and not as
-        dict of dicts (e.g. weights['conv1'] is a dict with keys 'weights' &
-        'biases') we need a special load function
-        """
-        # Load the weights into memory
-        weights_dict = np.load(self.WEIGHTS_PATH, encoding='bytes').item()
+        if current_step % FLAGS.checkpoint_every == 0:
+            path = saver.save(sess, checkpoint_prefix, global_step=current_step)
+            print("Saved model checkpoint to {}\n".format(path))
 
-        # Loop over all layer names stored in the weights dict
-        for op_name in weights_dict:
-
-            # Check if layer should be trained from scratch
-            if op_name not in self.train_layers:
-
-                with tf.variable_scope(op_name, reuse=True):
-
-                    # Assign weights/biases to their corresponding tf variable
-                    for data in weights_dict[op_name]:
-
-                        # Biases
-                        if len(data.shape) == 1:
-                            var = tf.get_variable('biases', trainable=False)
-                            session.run(var.assign(data))
-
-                        # Weights
-                        else:
-                            var = tf.get_variable('weights', trainable=False)
-                            session.run(var.assign(data))
-
-
-def conv(x, filter_height, filter_width, num_filters, stride_y, stride_x, name, padding='SAME', groups=1):
-    """Create a convolution layer.
-    Adapted from: https://github.com/ethereon/caffe-tensorflow
-    """
-    # Get number of input channels
-    input_channels = int(x.get_shape()[-1])
-
-    # Create lambda function for the convolution
-    convolve = lambda i, k: tf.nn.conv2d(input=i, filter=k, strides=[1, stride_y, stride_x, 1], padding=padding)
-
-    with tf.variable_scope(name) as scope:
-        # Create tf variables for the weights and biases of the conv layer
-        weights = tf.get_variable(name='weights',
-                                  shape=[filter_height, filter_width, input_channels/groups, num_filters])
-        biases = tf.get_variable(name='biases',
-                                 shape=[num_filters])
-
-    if groups == 1:
-        conv = convolve(x, weights)
-
-    # In the cases of multiple groups, split inputs & weights and
-    else:
-        # Split input and weights and convolve them separately
-        input_groups = tf.split(axis=3, num_or_size_splits=groups, value=x)
-        weight_groups = tf.split(axis=3, num_or_size_splits=groups, value=weights)
-        output_groups = [convolve(i, k) for i, k in zip(input_groups, weight_groups)]
-
-        # Concat the convolved output together again
-        conv = tf.concat(axis=3, values=output_groups)
-
-    # Add biases
-    bias = tf.reshape(tf.nn.bias_add(conv, biases), tf.shape(conv))
-
-    # Apply relu function
-    relu = tf.nn.relu(bias, name=scope.name)
-
-    return relu
-
-
-def fc(x, num_in, num_out, name, relu=True):
-    """Create a fully connected layer."""
-    with tf.variable_scope(name) as scope:
-
-        # Create tf variables for the weights and biases
-        weights = tf.get_variable(name='weights',
-                                  shape=[num_in, num_out],
-                                  trainable=True)
-        biases = tf.get_variable(name='biases',
-                                 shape=[num_out],
-                                 trainable=True)
-
-        # Matrix multiply weights and inputs and add bias
-        act = tf.nn.xw_plus_b(x, weights, biases, name=scope.name)
-
-    if relu:
-        # Apply ReLu non linearity
-        relu = tf.nn.relu(act)
-        return relu
-    else:
-        return act
-
-
-def max_pool(x, filter_height, filter_width, stride_y, stride_x, name, padding='SAME'):
-    """Create a max pooling layer."""
-    return tf.nn.max_pool(value=x,
-                          ksize=[1, filter_height, filter_width, 1],
-                          strides=[1, stride_y, stride_x, 1],
-                          padding=padding,
-                          name=name)
-
-
-def lrn(x, radius, alpha, beta, name, bias=1.0):
-    """Create a local response normalization layer."""
-    return tf.nn.local_response_normalization(input=x,
-                                              depth_radius=radius,
-                                              alpha=alpha,
-                                              beta=beta,
-                                              bias=bias,
-                                              name=name)
-
-
-def dropout(x, keep_prob):
-    """Create a dropout layer."""
-    return tf.nn.dropout(x, keep_prob)
+        # break conditon
+        if accuracy > 0.95:
+            exit()
