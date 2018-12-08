@@ -99,7 +99,7 @@ with tf.Session() as sess:
     sess.run(tf.global_variables_initializer())
     # Load the pretrained weights into the non-trainable layer
     alexNet.load_initial_weights(sess)
-    print("{} Start training...".format(datetime.now()))
+    print("run the tensorboard in terminal: \ntensorboard --logdir={} --port=6006".format(out_dir))
 
     while True:
         # train loop

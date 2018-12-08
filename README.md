@@ -2,7 +2,7 @@
 
 # Finetune AlexNet with Tensorflow
 
-**Update 15.06.2016**
+**Update 08.12.2018**
 
 I revised the entire code base to work with the new input pipeline coming with TensorFlow >= version 1.2rc0. You can find an explanation of the new input pipeline in a new [blog post](https://kratzert.github.io/2017/06/15/example-of-tensorflows-new-input-pipeline.html) You can use this code as before for finetuning AlexNet on your own dataset, only the dependency of OpenCV isn't necessary anymore. The old code can be found in [this past commit](https://github.com/kratzert/finetune_alexnet_with_tensorflow/tree/5d751d62eb4d7149f4e3fd465febf8f07d4cea9d).
 
@@ -16,7 +16,7 @@ If you convert them on your own, take a look on the structure of the `.npy` weig
 ## Requirements
 
 - Python 3
-- TensorFlow >= 1.2rc0
+- TensorFlow >= 1.2
 - Numpy
 
 
