@@ -60,7 +60,8 @@ with tf.device('/cpu:0'):
 alexNet = AlexNet(keep_prob=FLAGS.keep_prob,
                   num_classes=FLAGS.num_classes,
                   train_layers=train_layers,
-                  learning_rate=FLAGS.learning_rate
+                  learning_rate=FLAGS.learning_rate,
+                  model="train"
                   )
 
 with tf.Session() as sess:
