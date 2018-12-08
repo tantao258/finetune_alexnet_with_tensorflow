@@ -26,17 +26,8 @@ import numpy as np
 
 class AlexNet(object):
     """Implementation of the AlexNet."""
-    def __init__(self, keep_prob, num_classes, train_layers, learning_rate, weights_path='DEFAULT'):
+    def __init__(self, keep_prob, num_classes, train_layers, learning_rate=0.01, model="train", weights_path='DEFAULT'):
         """Create the graph of the AlexNet model.
-
-        Args:
-            x: Placeholder for the input tensor.
-            keep_prob: Dropout probability.
-            num_classes: Number of classes in the dataset.
-            skip_layer: List of names of the layer, that get trained from
-                scratch
-            weights_path: Complete path to the pretrained weight file, if it
-                isn't in the same folder as this code
         """
         # Parse input arguments into class variables
         if weights_path == 'DEFAULT':
@@ -81,25 +72,27 @@ class AlexNet(object):
         dropout7 = dropout(fc7, keep_prob)
 
         # 8th Layer: FC and return unscaled activations
-        fc8 = fc(dropout7, 4096, num_classes, relu=False, name='fc8')
+        self.fc8 = fc(dropout7, 4096, num_classes, relu=False, name='fc8')
 
-        with tf.name_scope("loss"):
-            self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=fc8, labels=self.y_input))
+        if model == "train" or model == "val":
 
-        with tf.name_scope("train"):
-            self.global_step = tf.Variable(0, name="global_step", trainable=False)
-            var_list = [v for v in tf.trainable_variables() if v.name.split('/')[0] in train_layers]
-            gradients = tf.gradients(self.loss, var_list)
-            self.grads_and_vars = list(zip(gradients, var_list))
-            optimizer = tf.train.GradientDescentOptimizer(learning_rate)
-            self.train_op = optimizer.apply_gradients(grads_and_vars=self.grads_and_vars, global_step=self.global_step)
+            with tf.name_scope("loss"):
+                self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=self.fc8, labels=self.y_input))
 
-        with tf.name_scope("prediction"):
-            self.prediction = tf.argmax(fc8, 1, name="prediction")
+            with tf.name_scope("train"):
+                self.global_step = tf.Variable(0, name="global_step", trainable=False)
+                var_list = [v for v in tf.trainable_variables() if v.name.split('/')[0] in train_layers]
+                gradients = tf.gradients(self.loss, var_list)
+                self.grads_and_vars = list(zip(gradients, var_list))
+                optimizer = tf.train.GradientDescentOptimizer(learning_rate)
+                self.train_op = optimizer.apply_gradients(grads_and_vars=self.grads_and_vars, global_step=self.global_step)
 
-        with tf.name_scope("accuracy"):
-            correct_prediction = tf.equal(self.prediction, tf.argmax(self.y_input, 1))
-            self.accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"), name="accuracy")
+            with tf.name_scope("prediction"):
+                self.prediction = tf.argmax(self.fc8, 1, name="prediction")
+
+            with tf.name_scope("accuracy"):
+                correct_prediction = tf.equal(self.prediction, tf.argmax(self.y_input, 1))
+                self.accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"), name="accuracy")
 
     def load_initial_weights(self, session):
         """Load weights from file into network.
