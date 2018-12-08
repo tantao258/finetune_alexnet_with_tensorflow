@@ -22,15 +22,15 @@ If you convert them on your own, take a look on the structure of the `.npy` weig
 
 ## TensorBoard support
 
-The code has TensorFlows summaries implemented so that you can follow the training progress in TensorBoard. (--logdir in the config section of `finetune.py`)
+The code has TensorFlows summaries implemented so that you can follow the training progress in TensorBoard.
 
 ## Content
 
 - `alexnet.py`: Class with the graph definition of the AlexNet.
 - `finetune.py`: Script to run the finetuning process.
-- `datagenerator.py`: Contains a wrapper class for the new input pipeline.
+- `utils.py`: Contains a wrapper class for the new input pipeline.
 - `caffe_classes.py`: List of the 1000 class names of ImageNet (copied from [here](http://www.cs.toronto.edu/~guerzhoy/tf_alexnet/)).
-- `validate_alexnet_on_imagenet.ipynb`: Notebook to test the correct implementation of AlexNet and the pretrained weights on some images from the ImageNet database.
+- `sample_on_imagenet.ipynb`: Notebook to test the correct implementation of AlexNet and the pretrained weights on some images from the ImageNet database.
 - `images/*`: contains three example images, needed for the notebook.
 
 ## Usage
