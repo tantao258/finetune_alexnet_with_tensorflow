@@ -119,6 +119,7 @@ with tf.Session() as sess:
 
         if current_step % FLAGS.evaluate_every == 0:
             print("\nEvaluation:")
+            x_batch_val, y_batch_val = sess.run(val_next_batch)
             step, dev_summaries, loss, accuracy = sess.run([alexNet.global_step, dev_summary_merged, alexNet.loss, alexNet.accuracy],
                                                            feed_dict={
                                                                alexNet.x_input: x_batch_val,
