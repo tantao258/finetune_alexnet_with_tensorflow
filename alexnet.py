@@ -77,7 +77,9 @@ class AlexNet(object):
         if model == "train" or model == "val":
 
             with tf.name_scope("loss"):
-                self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=self.fc8, labels=self.y_input))
+                self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=self.fc8, labels=self.y_input))
+                print(self.fc8)
+                print(self.y_input)
 
             with tf.name_scope("train"):
                 self.global_step = tf.Variable(0, name="global_step", trainable=False)
