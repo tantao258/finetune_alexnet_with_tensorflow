@@ -21,12 +21,12 @@ os.environ['CUDA_VISIBLE_DEVICES'] = '0,1,2,3'
 Configuration Part.
 """
 # Parameters
-tf.app.flags.DEFINE_string("train_file", '/path/to/train.txt', "the path of train data")
-tf.app.flags.DEFINE_string("val_file", '/path/to/val.txt', "the path of val data")
-tf.app.flags.DEFINE_float("learning_rate", 0.01, "learn_rate(default:0.01)")
-tf.app.flags.DEFINE_integer("num_epochs", 10, "num_epoches(default:10)")
+tf.app.flags.DEFINE_string("train_file", './data/train.txt', "the path of train data")
+tf.app.flags.DEFINE_string("val_file", './data/validation.txt', "the path of val data")
+tf.app.flags.DEFINE_float("learning_rate", 0.001, "learn_rate(default:0.01)")
+tf.app.flags.DEFINE_integer("num_epochs", 50, "num_epoches(default:10)")
 tf.app.flags.DEFINE_integer("batch_size", 128, "batch_size(default:128)")
-tf.app.flags.DEFINE_integer("num_classes", 2, "num_classes(default:2)")
+tf.app.flags.DEFINE_integer("num_classes", 5, "num_classes(default:2)")
 tf.app.flags.DEFINE_float("keep_prob", 0.5, "dropout_rate(default:0.5)")
 tf.app.flags.DEFINE_integer("evaluate_every", 200, "Evaluate model on dev set after this many steps (default: 100)")
 tf.app.flags.DEFINE_integer("checkpoint_every", 400, "Save model after this many steps (default: 100)")
@@ -104,7 +104,7 @@ with tf.Session() as sess:
     while True:
         # train loop
         x_batch_train, y_batch_train = sess.run(train_next_batch)
-        _, step, train_summaries, loss, accuracy = sess.run([alexNet.train_op, alexNet.global_step, train_summary_merged, AlexNet.loss, alexNet.accuracy],
+        _, step, train_summaries, loss, accuracy = sess.run([alexNet.train_op, alexNet.global_step, train_summary_merged, alexNet.loss, alexNet.accuracy],
                                                             feed_dict={
                                                                 alexNet.x_input: x_batch_train,
                                                                 alexNet.y_input: y_batch_train,
@@ -135,5 +135,5 @@ with tf.Session() as sess:
             print("Saved model checkpoint to {}\n".format(path))
 
         # break conditon
-        if accuracy > 0.95:
-            exit()
+        #if accuracy > 0.95:
+            #exit()
