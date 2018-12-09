@@ -13,7 +13,7 @@ import time
 import tensorflow as tf
 from alexnet import AlexNet
 from utils import ImageDataGenerator
-from datetime import datetime
+import datetime
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '0,1,2,3'
 
