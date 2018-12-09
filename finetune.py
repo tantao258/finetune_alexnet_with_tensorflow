@@ -23,7 +23,7 @@ Configuration Part.
 # Parameters
 tf.app.flags.DEFINE_string("train_file", './data/train.txt', "the path of train data")
 tf.app.flags.DEFINE_string("val_file", './data/validation.txt', "the path of val data")
-tf.app.flags.DEFINE_float("learning_rate", 0.001, "learn_rate(default:0.01)")
+tf.app.flags.DEFINE_float("learning_rate", 0.001, "learn_rate(default:0.001)")
 tf.app.flags.DEFINE_integer("num_epochs", 50, "num_epoches(default:10)")
 tf.app.flags.DEFINE_integer("batch_size", 128, "batch_size(default:128)")
 tf.app.flags.DEFINE_integer("num_classes", 5, "num_classes(default:2)")
@@ -99,7 +99,7 @@ with tf.Session() as sess:
     sess.run(tf.global_variables_initializer())
     # Load the pretrained weights into the non-trainable layer
     alexNet.load_initial_weights(sess)
-    print("run the tensorboard in terminal: \ntensorboard --logdir={} --port=6006".format(out_dir))
+    print("run the tensorboard in terminal: \ntensorboard --logdir={} --port=6006 \n".format(out_dir))
 
     while True:
         # train loop
@@ -119,7 +119,6 @@ with tf.Session() as sess:
 
         if current_step % FLAGS.evaluate_every == 0:
             print("\nEvaluation:")
-            x_batch_val, y_batch_val = sess.run(val_next_batch)
             step, dev_summaries, loss, accuracy = sess.run([alexNet.global_step, dev_summary_merged, alexNet.loss, alexNet.accuracy],
                                                            feed_dict={
                                                                alexNet.x_input: x_batch_val,
@@ -129,6 +128,7 @@ with tf.Session() as sess:
             dev_summary_writer.add_summary(dev_summaries, step)
             time_str = datetime.datetime.now().isoformat()
             print("{}: step: {}, loss: {:g}, acc: {:g}".format(time_str, step, loss, accuracy))
+            print("\n")
 
         if current_step % FLAGS.checkpoint_every == 0:
             path = saver.save(sess, checkpoint_prefix, global_step=current_step)
