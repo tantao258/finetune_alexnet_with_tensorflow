@@ -88,6 +88,9 @@ class AlexNet(object):
                 self.grads_and_vars = list(zip(gradients, var_list))
                 optimizer = tf.train.GradientDescentOptimizer(learning_rate)
                 self.train_op = optimizer.apply_gradients(grads_and_vars=self.grads_and_vars, global_step=self.global_step)
+            
+            with tf.name_scope("probability"):
+                self.probability = tf.nn.softmax(self.fc8, name="probability")
 
             with tf.name_scope("prediction"):
                 self.prediction = tf.argmax(self.fc8, 1, name="prediction")
