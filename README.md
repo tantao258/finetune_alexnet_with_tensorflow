@@ -11,7 +11,7 @@ This repository contains all the code needed to finetune [AlexNet](http://papers
 All you need are the pretrained weights, which you can find [here](http://www.cs.toronto.edu/~guerzhoy/tf_alexnet/) or convert yourself from the caffe library using [caffe-to-tensorflow](https://github.com/ethereon/caffe-tensorflow).
 If you convert them on your own, take a look on the structure of the `.npy` weights file (dict of dicts or dict of lists).
 
-**Note**: I won't write to much of an explanation here, as I already wrote a long article about the entire code on my blog.
+**Note**: I won't write to much of an explanation here, test dataSet can be download from [here](https://pan.baidu.com/s/1Fx_K5PLAc9-e3dam1O1ZWA).
 
 ## Requirements
 
