@@ -26,7 +26,7 @@ import numpy as np
 
 class AlexNet(object):
     """Implementation of the AlexNet."""
-    def __init__(self, keep_prob, num_classes, train_layers, learning_rate=0.01, model="train", weights_path='DEFAULT'):
+    def __init__(self, num_classes, train_layers, learning_rate=0.01, model="train", weights_path='DEFAULT'):
         """Create the graph of the AlexNet model.
         """
         # Parse input arguments into class variables
@@ -65,11 +65,11 @@ class AlexNet(object):
         # 6th Layer: Flatten -> FC (w ReLu) -> Dropout
         flattened = tf.reshape(pool5, [-1, 6 * 6 * 256])
         fc6 = fc(flattened, 6 * 6 * 256, 4096, name='fc6')
-        dropout6 = dropout(fc6, keep_prob)
+        dropout6 = dropout(fc6, self.keep_prob)
 
         # 7th Layer: FC (w ReLu) -> Dropout
         fc7 = fc(dropout6, 4096, 4096, name='fc7')
-        dropout7 = dropout(fc7, keep_prob)
+        dropout7 = dropout(fc7, self.keep_prob)
 
         # 8th Layer: FC and return unscaled activations
         self.fc8 = fc(dropout7, 4096, num_classes, relu=False, name='fc8')
