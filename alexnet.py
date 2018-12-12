@@ -74,30 +74,28 @@ class AlexNet(object):
         # 8th Layer: FC and return unscaled activations
         self.fc8 = fc(dropout7, 4096, num_classes, relu=False, name='fc8')
 
-        if model == "train" or model == "val":
+        with tf.name_scope("loss"):
+            self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=self.fc8, labels=self.y_input))
+            print(self.fc8)
+            print(self.y_input)
 
-            with tf.name_scope("loss"):
-                self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=self.fc8, labels=self.y_input))
-                print(self.fc8)
-                print(self.y_input)
+        with tf.name_scope("train"):
+            self.global_step = tf.Variable(0, name="global_step", trainable=False)
+            var_list = [v for v in tf.trainable_variables() if v.name.split('/')[0] in train_layers]
+            gradients = tf.gradients(self.loss, var_list)
+            self.grads_and_vars = list(zip(gradients, var_list))
+            optimizer = tf.train.GradientDescentOptimizer(learning_rate)
+            self.train_op = optimizer.apply_gradients(grads_and_vars=self.grads_and_vars, global_step=self.global_step)
 
-            with tf.name_scope("train"):
-                self.global_step = tf.Variable(0, name="global_step", trainable=False)
-                var_list = [v for v in tf.trainable_variables() if v.name.split('/')[0] in train_layers]
-                gradients = tf.gradients(self.loss, var_list)
-                self.grads_and_vars = list(zip(gradients, var_list))
-                optimizer = tf.train.GradientDescentOptimizer(learning_rate)
-                self.train_op = optimizer.apply_gradients(grads_and_vars=self.grads_and_vars, global_step=self.global_step)
-            
-            with tf.name_scope("probability"):
-                self.probability = tf.nn.softmax(self.fc8, name="probability")
+        with tf.name_scope("probability"):
+            self.probability = tf.nn.softmax(self.fc8, name="probability")
 
-            with tf.name_scope("prediction"):
-                self.prediction = tf.argmax(self.fc8, 1, name="prediction")
+        with tf.name_scope("prediction"):
+            self.prediction = tf.argmax(self.fc8, 1, name="prediction")
 
-            with tf.name_scope("accuracy"):
-                correct_prediction = tf.equal(self.prediction, tf.argmax(self.y_input, 1))
-                self.accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"), name="accuracy")
+        with tf.name_scope("accuracy"):
+            correct_prediction = tf.equal(self.prediction, tf.argmax(self.y_input, 1))
+            self.accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"), name="accuracy")
 
     def load_initial_weights(self, session):
         """Load weights from file into network.
