@@ -37,7 +37,7 @@ with tf.Session() as sess:
     sess.run(tf.global_variables_initializer())
 
     saver = tf.train.Saver(var_list=tf.global_variables())
-    model_file = tf.train.latest_checkpoint("./runs/vgg16/1544497939/ckpt/")
+    model_file = tf.train.latest_checkpoint("./runs/alexnet/1544668644/ckpt/")
     saver.restore(sess, model_file)
 
     x_batch_test, y_batch_test = sess.run(test_next_batch)
