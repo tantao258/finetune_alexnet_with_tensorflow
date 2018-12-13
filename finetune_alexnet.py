@@ -1,6 +1,6 @@
 """Script to finetune AlexNet using Tensorflow.
 
-With this script you can finetune AlexNet as provided in the alexnet.py
+With this script you can finetune AlexNet as provided in the model_alexnet.py
 class on any given dataset. Specify the configuration settings at the beginning according to your problem.
 This script was written for TensorFlow >= version 1.2rc0 and comes with a blog post, which you can find here:
 https://kratzert.github.io/2017/02/24/finetuning-alexnet-with-tensorflow.html
@@ -11,7 +11,7 @@ contact: f.kratzert(at)gmail.com
 import os
 import time
 import tensorflow as tf
-from alexnet import AlexNet
+from model_alexnet import AlexNet
 from utils import ImageDataGenerator
 import datetime
 
@@ -57,11 +57,9 @@ with tf.device('/cpu:0'):
     val_next_batch = val_iterator.iterator.get_next()
 
 # Initialize model
-alexNet = AlexNet(keep_prob=FLAGS.keep_prob,
-                  num_classes=FLAGS.num_classes,
+alexNet = AlexNet(num_classes=FLAGS.num_classes,
                   train_layers=train_layers,
-                  learning_rate=FLAGS.learning_rate,
-                  model="train"
+                  learning_rate=FLAGS.learning_rate
                   )
 
 with tf.Session() as sess:
