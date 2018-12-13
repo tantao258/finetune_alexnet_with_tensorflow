@@ -111,9 +111,9 @@ class ImageDataGenerator(object):
         img_centered = tf.subtract(img_resized, IMAGENET_MEAN)
 
         # RGB -> BGR
-        img_bgr = img_centered[:, :, ::-1]
+        # img_bgr = img_centered[:, :, ::-1]
 
-        return img_bgr, one_hot
+        return img_centered, one_hot
 
     def _parse_function_inference(self, filename, label):
         """Input parser for samples of the validation/test set."""
@@ -127,6 +127,6 @@ class ImageDataGenerator(object):
         img_centered = tf.subtract(img_resized, IMAGENET_MEAN)
 
         # RGB -> BGR
-        img_bgr = img_centered[:, :, ::-1]
+        # img_bgr = img_centered[:, :, ::-1]
 
-        return img_bgr, one_hot
+        return img_centered, one_hot
