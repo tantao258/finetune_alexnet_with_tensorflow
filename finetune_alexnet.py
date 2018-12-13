@@ -64,7 +64,7 @@ alexNet = AlexNet(num_classes=FLAGS.num_classes,
 
 with tf.Session() as sess:
     timestamp = str(int(time.time()))
-    out_dir = os.path.abspath(os.path.join(os.path.curdir, "runs", timestamp))
+    out_dir = os.path.abspath(os.path.join(os.path.curdir, "runs/alexnet", timestamp))
     print("Writing to {}\n".format(out_dir))
 
     # define summary
@@ -88,7 +88,7 @@ with tf.Session() as sess:
     dev_summary_writer = tf.summary.FileWriter(os.path.join(out_dir, "summaries", "dev"), graph=sess.graph)
 
     # checkPoint saver
-    checkpoint_dir = os.path.abspath(os.path.join(out_dir, "checkpoints"))
+    checkpoint_dir = os.path.abspath(os.path.join(out_dir, "ckpt"))
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
     checkpoint_prefix = os.path.join(checkpoint_dir, "model")
